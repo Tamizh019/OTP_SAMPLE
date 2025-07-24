@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - Create Account</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+    }
+    
+    .register-container {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    .logo {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 30px;
+    }
+    
+    h2 {
+      color: #333;
+      margin-bottom: 30px;
+      font-weight: 600;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 500;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e1e5e9;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .step {
+      display: none;
+    }
+    
+    .step.active {
+      display: block;
+    }
+    
+    .message {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .otp-input {
+      text-align: center;
+      font-size: 18px;
+      letter-spacing: 2px;
+    }
+    
+    .back-to-login {
+      margin-top: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .back-to-login:hover {
+      text-decoration: underline;
+    }
+
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    .step-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #e1e5e9;
+      margin: 0 8px;
+      transition: background 0.3s ease;
+    }
+    
+    .step-dot.active {
+      background: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <div class="logo">🔐 SecureAuth</div>
+    
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot1"></div>
+      <div class="step-dot" id="dot2"></div>
+    </div>
+
+    <!-- Step 1: Email Input -->
+    <div class="step active" id="step1">
+      <h2>Create Your Account</h2>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="Enter your email" required>
+      </div>
+      <button id="sendOtpBtn">Send Verification Code</button>
+    </div>
+
+    <!-- Step 2: OTP Verification -->
+    <div class="step" id="step2">
+      <h2>Verify Your Email</h2>
+      <p style="color: #666; margin-bottom: 20px;">We've sent a 6-digit code to <span id="emailDisplay"></span></p>
+      <div class="form-group">
+        <label for="otpCode">Verification Code</label>
+        <input type="text" id="otpCode" class="otp-input" maxlength="6" placeholder="000000" required>
+      </div>
+      <button id="verifyOtpBtn">Verify & Complete Registration</button>
+      <button type="button" id="resendBtn" style="background: transparent; color: #667eea; margin-top: 10px;">Resend Code</button>
+    </div>
+
+    <div id="message"></div>
+    <a href="login.html" class="back-to-login">Already have an account? Login</a>
+  </div>
+
+<script>
+const SUPABASE_URL = 'https://detkmgvdzrmovbebwuke.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldGttZ3ZkenJtb3ZiZWJ3dWtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMzY1MDMsImV4cCI6MjA2ODkxMjUwM30.ohlbBch3zCOjIhE32hhS3lWenw6cfX6BTe7U0wMowIs';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let userEmail = '';
+
+function showStep(stepNum) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+  
+  document.getElementById(`step${stepNum}`).classList.add('active');
+  document.getElementById(`dot${stepNum}`).classList.add('active');
+}
+
+function showMessage(text, type = 'error') {
+  const msgEl = document.getElementById('message');
+  msgEl.textContent = text;
+  msgEl.className = `message ${type}`;
+}
+
+// Step 1: Send OTP
+document.getElementById('sendOtpBtn').onclick = async () => {
+  userEmail = document.getElementById('email').value.trim();
+  if (!userEmail) return showMessage('Please enter your email address');
+
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: userEmail,
+      options: { 
+        shouldCreateUser: true,
+        data: { registration: true }
+      }
+    });
+
+    if (error) throw error;
+
+    document.getElementById('emailDisplay').textContent = userEmail;
+    showStep(2);
+    showMessage('Verification code sent! Check your email.', 'success');
+    
+  } catch (error) {
+    showMessage(error.message);
+    btn.disabled = false;
+    btn.textContent = 'Send Verification Code';
+  }
+};
+
+// Step 2: Verify OTP
+document.getElementById('verifyOtpBtn').onclick = async () => {
+  const otpCode = document.getElementById('otpCode').value.trim();
+  if (otpCode.length !== 6) return showMessage('Please enter the 6-digit code');
+
+  const btn = document.getElementById('verifyOtpBtn');
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: userEmail,
+      token: otpCode,
+      type: 'email'
+    });
+
+    if (error) throw error;
+
+    showMessage('Registration successful! Redirecting...', 'success');
+    
+    // Sign out and redirect to login
+    await supabase.auth.signOut();
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 2000);
+
+  } catch (error) {
+    showMessage(error.message);
+    btn.disabled = false;
+    btn.textContent = 'Verify & Complete Registration';
+  }
+};
+
+// Resend OTP
+document.getElementById('resendBtn').onclick = async () => {
+  const btn = document.getElementById('resendBtn');
+  btn.disabled = true;
+  btn.textContent = 'Resending...';
+
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: userEmail,
+      options: { shouldCreateUser: true }
+    });
+
+    if (error) throw error;
+    showMessage('New verification code sent!', 'success');
+
+  } catch (error) {
+    showMessage(error.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Resend Code';
+  }
+};
+
+// Auto-focus OTP input
+document.getElementById('otpCode').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '');
+});
+</script>
+</body>
+</html>
