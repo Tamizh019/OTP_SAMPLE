@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REGISTER - HR & IT Assistant</title>
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0f1117;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 1rem;
+        }
+        
+        #particle-canvas {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            display: block;
+        }
+        
+        .register-container {
+            background: rgba(30, 35, 48, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .register-container h2 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #fff;
+            background: linear-gradient(135deg, #7ab8ff 0%, #4f8cff 50%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .required {
+            color: #f87171;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group input[type="tel"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #374151;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: rgba(17, 24, 39, 0.8);
+            color: #f1f5f9;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            border-color: #7ab8ff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(122, 184, 255, 0.1);
+            background: rgba(17, 24, 39, 0.95);
+        }
+        
+        .password-strength {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .strength-weak { color: #f87171; }
+        .strength-medium { color: #fbbf24; }
+        .strength-strong { color: #34d399; }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 0.2rem;
+            accent-color: #7ab8ff;
+        }
+        
+        .checkbox-group label {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 0;
+        }
+        
+        .checkbox-group a {
+            color: #7ab8ff;
+            text-decoration: none;
+        }
+        
+        .checkbox-group a:hover {
+            text-decoration: underline;
+        }
+        
+        .register-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #7ab8ff 0%, #4f8cff 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .register-btn:hover {
+            background: linear-gradient(135deg, #4f8cff 0%, #3b82f6 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(122, 184, 255, 0.3);
+        }
+        
+        .register-btn:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: center;
+            display: none;
+        }
+        
+        .message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+        
+        .message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        .message.info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #3b82f6;
+        }
+        
+        .login-link {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        
+        .login-link a {
+            color: #7ab8ff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .register-container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+            
+            .register-container h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+    <div class="register-container">
+        <h2>Create Account</h2>
+        <p class="subtitle">Join HR & IT Assistant Platform</p>
+        
+        <form id="register-form">
+            <div class="form-group">
+                <label for="fullName">Full Name <span class="required">*</span></label>
+                <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address <span class="required">*</span></label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number <span class="required">*</span></label>
+                <input type="tel" id="phone" name="phone" placeholder="+91 98765 43210" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password <span class="required">*</span></label>
+                <input type="password" id="password" name="password" placeholder="Create a strong password" required minlength="8">
+                <div id="password-strength" class="password-strength"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="terms" name="terms" required>
+                <label for="terms">
+                    I agree to the <a href="#" target="_blank">Terms & Conditions</a> and 
+                    <a href="#" target="_blank">Privacy Policy</a>
+                </label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="newsletter" name="newsletter">
+                <label for="newsletter">
+                    Send me updates about new features and improvements
+                </label>
+            </div>
+            
+            <button type="submit" class="register-btn" id="registerBtn">
+                <span class="loading-spinner" id="loadingSpinner"></span>
+                <span id="btnText">Create Account</span>
+            </button>
+        </form>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="login-link">
+            Already have an account? <a href="login.html">Sign In</a>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://detkmgvdzrmovbebwuke.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldGttZ3ZkenJtb3ZiZWJ3dWtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMzY1MDMsImV4cCI6MjA2ODkxMjUwM30.ohlbBch3zCOjIhE32hhS3lWenw6cfX6BTe7U0wMowIs';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Particle background effect (Enhanced)
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 80;
+        const colors = ['#7ab8ff', '#4f8cff', '#60a5fa', '#3b82f6'];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function randomBetween(a, b) {
+            return a + Math.random() * (b - a);
+        }
+
+        function createParticle() {
+            return {
+                x: randomBetween(0, canvas.width),
+                y: randomBetween(0, canvas.height),
+                radius: randomBetween(1, 2.5),
+                color: colors[Math.floor(Math.random() * colors.length)],
+                speedX: randomBetween(-0.3, 0.3),
+                speedY: randomBetween(-0.3, 0.3),
+                alpha: randomBetween(0.3, 0.8),
+                pulse: randomBetween(0, Math.PI * 2)
+            };
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(createParticle());
+            }
+        }
+        initParticles();
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let p of particles) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha + Math.sin(p.pulse) * 0.2;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 6;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function updateParticles() {
+            for (let p of particles) {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.pulse += 0.02;
+                
+                if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+            }
+        }
+
+        function animate() {
+            updateParticles();
+            drawParticles();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Password Strength Checker
+        function checkPasswordStrength(password) {
+            const strengthElement = document.getElementById('password-strength');
+            let strength = 0;
+            let feedback = [];
+
+            if (password.length >= 8) strength += 1;
+            else feedback.push('At least 8 characters');
+
+            if (/[a-z]/.test(password)) strength += 1;
+            else feedback.push('lowercase letter');
+
+            if (/[A-Z]/.test(password)) strength += 1;
+            else feedback.push('uppercase letter');
+
+            if (/[0-9]/.test(password)) strength += 1;
+            else feedback.push('number');
+
+            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+            else feedback.push('special character');
+
+            let strengthText = '';
+            let strengthClass = '';
+
+            if (strength < 3) {
+                strengthText = `Weak password. Missing: ${feedback.join(', ')}`;
+                strengthClass = 'strength-weak';
+            } else if (strength < 5) {
+                strengthText = `Medium strength. Consider adding: ${feedback.join(', ')}`;
+                strengthClass = 'strength-medium';
+            } else {
+                strengthText = 'Strong password!';
+                strengthClass = 'strength-strong';
+            }
+
+            strengthElement.textContent = strengthText;
+            strengthElement.className = `password-strength ${strengthClass}`;
+        }
+
+        // Form Validation and Submission
+        document.getElementById('password').addEventListener('input', function(e) {
+            checkPasswordStrength(e.target.value);
+        });
+
+        document.getElementById('confirmPassword').addEventListener('input', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = e.target.value;
+            
+            if (confirmPassword && password !== confirmPassword) {
+                e.target.setCustomValidity('Passwords do not match');
+            } else {
+                e.target.setCustomValidity('');
+            }
+        });
+
+        // Phone number formatting
+        document.getElementById('phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.startsWith('91')) {
+                value = '+' + value;
+            } else if (!value.startsWith('+91') && value.length > 0) {
+                value = '+91' + value;
+            }
+            e.target.value = value;
+        });
+
+        // Show message function
+        function showMessage(text, type) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = text;
+            messageElement.className = `message ${type}`;
+            messageElement.style.display = 'block';
+            
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 6000);
+        }
+
+        // Set loading state
+        function setLoading(isLoading) {
+            const btn = document.getElementById('registerBtn');
+            const spinner = document.getElementById('loadingSpinner');
+            const btnText = document.getElementById('btnText');
+            
+            if (isLoading) {
+                btn.disabled = true;
+                spinner.style.display = 'inline-block';
+                btnText.textContent = 'Creating Account...';
+            } else {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = 'Create Account';
+            }
+        }
+
+        // Registration form handler
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const userData = {
+                fullName: formData.get('fullName').trim(),
+                email: formData.get('email').trim(),
+                phone: formData.get('phone').trim(),
+                password: formData.get('password'),
+                confirmPassword: formData.get('confirmPassword'),
+                terms: formData.get('terms'),
+                newsletter: formData.get('newsletter')
+            };
+
+            // Validation
+            if (!userData.terms) {
+                showMessage('Please accept the Terms & Conditions', 'error');
+                return;
+            }
+
+            if (userData.password !== userData.confirmPassword) {
+                showMessage('Passwords do not match', 'error');
+                return;
+            }
+
+            if (userData.password.length < 8) {
+                showMessage('Password must be at least 8 characters long', 'error');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                // Register user with Supabase Auth
+                const { data, error } = await supabase.auth.signUp({
+                    email: userData.email,
+                    password: userData.password,
+                    options: {
+                        data: {
+                            full_name: userData.fullName,
+                            phone: userData.phone,
+                            newsletter_subscription: userData.newsletter ? true : false
+                        },
+                        emailRedirectTo: `${window.location.origin}/login.html`
+                    }
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                if (data.user) {
+                    if (data.user.email_confirmed_at) {
+                        showMessage('Account created successfully! You can now login.', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    } else {
+                        showMessage(
+                            'Registration successful! Please check your email to verify your account before logging in.', 
+                            'info'
+                        );
+                        
+                        // Clear form
+                        document.getElementById('register-form').reset();
+                    }
+                }
+
+            } catch (error) {
+                console.error('Registration error:', error);
+                
+                if (error.message.includes('already registered')) {
+                    showMessage('This email is already registered. Try logging in instead.', 'error');
+                } else if (error.message.includes('weak password')) {
+                    showMessage('Password is too weak. Please use a stronger password.', 'error');
+                } else if (error.message.includes('invalid email')) {
+                    showMessage('Please enter a valid email address.', 'error');
+                } else {
+                    showMessage('Registration failed. Please try again later.', 'error');
+                }
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Initialize form focus
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('fullName').focus();
+        });
+    </script>
+</body>
+</html>

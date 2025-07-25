@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOGIN - HR & IT Assistant</title>
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0f1117;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #particle-canvas {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            display: block;
+        }
+        
+        .login-container {
+            background: rgba(30, 35, 48, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #fff;
+            background: linear-gradient(135deg, #7ab8ff 0%, #4f8cff 50%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+        
+        .step {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: linear-gradient(135deg, #7ab8ff, #4f8cff);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(122, 184, 255, 0.4);
+        }
+        
+        .step.completed {
+            background: #22c55e;
+            color: #fff;
+        }
+        
+        .step.inactive {
+            background: #374151;
+            color: #9ca3af;
+        }
+        
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: #374151;
+            transition: all 0.3s ease;
+        }
+        
+        .step-line.completed {
+            background: #22c55e;
+        }
+        
+        .form-step {
+            display: none;
+        }
+        
+        .form-step.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #374151;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: rgba(17, 24, 39, 0.8);
+            color: #f1f5f9;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            border-color: #7ab8ff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(122, 184, 255, 0.1);
+            background: rgba(17, 24, 39, 0.95);
+        }
+        
+        .password-toggle {
+            position: relative;
+        }
+        
+        .password-toggle-btn {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        
+        .password-toggle-btn:hover {
+            color: #7ab8ff;
+        }
+        
+        .otp-input {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 1.5rem 0;
+        }
+        
+        .otp-digit {
+            width: 48px;
+            height: 48px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            background: rgba(17, 24, 39, 0.8);
+            color: #f1f5f9;
+            transition: all 0.3s ease;
+        }
+        
+        .otp-digit:focus {
+            border-color: #7ab8ff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(122, 184, 255, 0.1);
+        }
+        
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-options label {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+        
+        .form-options input[type="checkbox"] {
+            margin-right: 0.5rem;
+            accent-color: #7ab8ff;
+        }
+        
+        .form-options a {
+            color: #7ab8ff;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #7ab8ff 0%, #4f8cff 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #4f8cff 0%, #3b82f6 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(122, 184, 255, 0.3);
+        }
+        
+        .login-btn:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .resend-section {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .resend-btn {
+            color: #7ab8ff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: underline;
+        }
+        
+        .resend-btn:disabled {
+            color: #6b7280;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+        
+        .countdown {
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+        
+        .message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: center;
+            display: none;
+        }
+        
+        .message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+        
+        .message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        .message.info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #3b82f6;
+        }
+        
+        .signup-link {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        
+        .signup-link a {
+            color: #7ab8ff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .back-btn {
+            color: #7ab8ff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+            
+            .otp-digit {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+    <div class="login-container">
+        <h2>Welcome Back</h2>
+        <p class="subtitle">HR & IT Assistant Platform</p>
+        
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active" id="step1">1</div>
+            <div class="step-line" id="line1"></div>
+            <div class="step inactive" id="step2">2</div>
+        </div>
+        
+        <!-- Step 1: Email & Password -->
+        <div class="form-step active" id="login-step">
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-toggle">
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle-btn" id="togglePassword">👁️</button>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label>
+                        <input type="checkbox" name="remember" id="remember"> Remember me
+                    </label>
+                    <a href="#" id="forgot-password">Forgot password?</a>
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="loading-spinner" id="loginSpinner"></span>
+                    <span id="loginBtnText">Continue</span>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Step 2: OTP Verification -->
+        <div class="form-step" id="otp-step">
+            <button class="back-btn" id="backBtn">
+                ← Back to login
+            </button>
+            
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <h3 style="color: #e2e8f0; margin-bottom: 0.5rem;">Verify Your Identity</h3>
+                <p style="color: #94a3b8; font-size: 0.9rem;">
+                    Enter the 6-digit verification code sent to <br><span id="email-display"></span>
+                </p>
+            </div>
+            
+            <form id="otp-form">
+                <div class="otp-input">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required>
+                </div>
+                
+                <button type="submit" class="login-btn" id="otpBtn">
+                    <span class="loading-spinner" id="otpSpinner"></span>
+                    <span id="otpBtnText">Verify & Login</span>
+                </button>
+            </form>
+            
+            <div class="resend-section">
+                <p class="countdown" id="countdown">Resend code in <span id="timer">60</span>s</p>
+                <button class="resend-btn" id="resendBtn" disabled>Resend Code</button>
+            </div>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="signup-link">
+            Don't have an account? <a href="register.html">Sign up</a>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://detkmgvdzrmovbebwuke.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldGttZ3ZkenJtb3ZiZWJ3dWtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMzY1MDMsImV4cCI6MjA2ODkxMjUwM30.ohlbBch3zCOjIhE32hhS3lWenw6cfX6BTe7U0wMowIs';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Global variables
+        let userEmail = '';
+        let userSession = null;
+        let resendTimer = 60;
+        let resendInterval = null;
+        
+        // Particle background effect
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 80;
+        const colors = ['#7ab8ff', '#4f8cff', '#60a5fa', '#3b82f6'];
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        function randomBetween(a, b) {
+            return a + Math.random() * (b - a);
+        }
+        
+        function createParticle() {
+            return {
+                x: randomBetween(0, canvas.width),
+                y: randomBetween(0, canvas.height),
+                radius: randomBetween(1, 2.5),
+                color: colors[Math.floor(Math.random() * colors.length)],
+                speedX: randomBetween(-0.3, 0.3),
+                speedY: randomBetween(-0.3, 0.3),
+                alpha: randomBetween(0.3, 0.8),
+                pulse: randomBetween(0, Math.PI * 2)
+            };
+        }
+        
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(createParticle());
+            }
+        }
+        initParticles();
+        
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let p of particles) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha + Math.sin(p.pulse) * 0.2;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 6;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        function updateParticles() {
+            for (let p of particles) {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.pulse += 0.02;
+                
+                if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+            }
+        }
+        
+        function animate() {
+            updateParticles();
+            drawParticles();
+            requestAnimationFrame(animate);
+        }
+        animate();
+        
+        // Utility Functions
+        function showMessage(text, type) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = text;
+            messageElement.className = `message ${type}`;
+            messageElement.style.display = 'block';
+            
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        function setLoginLoading(isLoading) {
+            const btn = document.getElementById('loginBtn');
+            const spinner = document.getElementById('loginSpinner');
+            const btnText = document.getElementById('loginBtnText');
+            
+            if (isLoading) {
+                btn.disabled = true;
+                spinner.style.display = 'inline-block';
+                btnText.textContent = 'Verifying...';
+            } else {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = 'Continue';
+            }
+        }
+        
+        function setOtpLoading(isLoading) {
+            const btn = document.getElementById('otpBtn');
+            const spinner = document.getElementById('otpSpinner');
+            const btnText = document.getElementById('otpBtnText');
+            
+            if (isLoading) {
+                btn.disabled = true;
+                spinner.style.display = 'inline-block';
+                btnText.textContent = 'Verifying...';
+            } else {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = 'Verify & Login';
+            }
+        }
+        
+        function switchToStep2() {
+            document.getElementById('step1').className = 'step completed';
+            document.getElementById('line1').className = 'step-line completed';
+            document.getElementById('step2').className = 'step active';
+            
+            document.getElementById('login-step').classList.remove('active');
+            document.getElementById('otp-step').classList.add('active');
+            
+            document.querySelector('.otp-digit').focus();
+        }
+        
+        function switchToStep1() {
+            document.getElementById('step1').className = 'step active';
+            document.getElementById('line1').className = 'step-line';
+            document.getElementById('step2').className = 'step inactive';
+            
+            document.getElementById('otp-step').classList.remove('active');
+            document.getElementById('login-step').classList.add('active');
+            
+            document.querySelectorAll('.otp-digit').forEach(input => input.value = '');
+            
+            if (userSession) {
+                supabase.auth.signOut();
+                userSession = null;
+            }
+        }
+        
+        function startResendTimer() {
+            resendTimer = 60;
+            document.getElementById('resendBtn').disabled = true;
+            document.getElementById('countdown').style.display = 'block';
+            
+            resendInterval = setInterval(() => {
+                resendTimer--;
+                document.getElementById('timer').textContent = resendTimer;
+                
+                if (resendTimer <= 0) {
+                    clearInterval(resendInterval);
+                    document.getElementById('resendBtn').disabled = false;
+                    document.getElementById('countdown').style.display = 'none';
+                }
+            }, 1000);
+        }
+        
+        // Password Toggle
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.getElementById('togglePassword');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
+        });
+        
+        // OTP Input Handling
+        document.querySelectorAll('.otp-digit').forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+                const value = e.target.value;
+                if (!/^\d$/.test(value)) {
+                    e.target.value = '';
+                    return;
+                }
+                
+                if (value && index < 5) {
+                    document.querySelectorAll('.otp-digit')[index + 1].focus();
+                }
+            });
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    document.querySelectorAll('.otp-digit')[index - 1].focus();
+                }
+            });
+            
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const paste = e.clipboardData?.getData('text');
+                if (paste && /^\d{6}$/.test(paste)) {
+                    document.querySelectorAll('.otp-digit').forEach((inp, i) => {
+                        inp.value = paste[i] || '';
+                    });
+                }
+            });
+        });
+        
+        // Step 1: Email & Password Authentication
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            setLoginLoading(true);
+            userEmail = email;
+            
+            try {
+                // First, authenticate with email and password
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+        
+                if (error) {
+                    throw error;
+                }
+        
+                if (data.user && data.session) {
+                    // Check if email is verified
+                    if (!data.user.email_confirmed_at) {
+                        showMessage('Please verify your email before logging in', 'error');
+                        await supabase.auth.signOut();
+                        setLoginLoading(false);
+                        return;
+                    }
+        
+                    // Store temporary session
+                    userSession = data.session;
+                    
+                    // Now send OTP using Supabase's real OTP system
+                    const { error: otpError } = await supabase.auth.signInWithOtp({
+                        email: email,
+                        options: {
+                            shouldCreateUser: false, // Don't create new user, just send OTP
+                            data: {
+                                verification_type: '2fa_login'
+                            }
+                        }
+                    });
+        
+                    if (otpError) {
+                        throw otpError;
+                    }
+                    
+                    // Display email in step 2
+                    document.getElementById('email-display').textContent = email;
+                    
+                    // Switch to OTP step
+                    switchToStep2();
+                    startResendTimer();
+                    
+                    showMessage('Password verified! Please check your email for verification code.', 'success');
+                }
+        
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                if (error.message.includes('Invalid login credentials')) {
+                    showMessage('Invalid email or password', 'error');
+                } else if (error.message.includes('Email not confirmed')) {
+                    showMessage('Please verify your email before logging in', 'error');
+                } else if (error.message.includes('Too many requests')) {
+                    showMessage('Too many login attempts. Please try again later.', 'error');
+                } else {
+                    showMessage('Login failed. Please try again.', 'error');
+                }
+            } finally {
+                setLoginLoading(false);
+            }
+        });
+        
+        // Step 2: OTP Verification
+        document.getElementById('otp-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const otpInputs = document.querySelectorAll('.otp-digit');
+            const enteredOtp = Array.from(otpInputs).map(input => input.value).join('');
+            
+            if (enteredOtp.length !== 6) {
+                showMessage('Please enter all 6 digits', 'error');
+                return;
+            }
+            
+            setOtpLoading(true);
+            
+            try {
+                // Verify OTP with Supabase
+                const { data, error } = await supabase.auth.verifyOtp({
+                    email: userEmail,
+                    token: enteredOtp,
+                    type: 'email'
+                });
+        
+                if (error) {
+                    throw error;
+                }
+        
+                if (data.user && data.session) {
+                    // OTP verification successful - complete login
+                    
+                    // Set remember me if checked
+                    const rememberMe = document.getElementById('remember').checked;
+                    if (rememberMe) {
+                        localStorage.setItem('remember_user', JSON.stringify({
+                            email: userEmail,
+                            timestamp: Date.now()
+                        }));
+                    }
+                    
+                    // Store session info
+                    localStorage.setItem('supabase_session', JSON.stringify(data.session));
+                    localStorage.setItem('2fa_verified', 'true');
+                    
+                    showMessage('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect to main.html after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                    
+                } else {
+                    showMessage('Login verification failed. Please try again.', 'error');
+                }
+        
+            } catch (error) {
+                console.error('2FA verification error:', error);
+                
+                if (error.message.includes('Invalid token')) {
+                    showMessage('Invalid or expired code. Please try again.', 'error');
+                } else if (error.message.includes('Token has expired')) {
+                    showMessage('Code has expired. Please request a new one.', 'error');
+                } else {
+                    showMessage('Verification failed. Please try again.', 'error');
+                }
+                
+                // Clear OTP inputs on error
+                otpInputs.forEach(input => input.value = '');
+                otpInputs[0].focus();
+            } finally {
+                setOtpLoading(false);
+            }
+        });
+        
+        // Back Button Handler
+        document.getElementById('backBtn').addEventListener('click', function() {
+            switchToStep1();
+            userEmail = '';
+            clearInterval(resendInterval);
+        });
+        
+        // Resend OTP Handler
+        document.getElementById('resendBtn').addEventListener('click', async function() {
+            try {
+                const { error } = await supabase.auth.signInWithOtp({
+                    email: userEmail,
+                    options: {
+                        shouldCreateUser: false,
+                        data: {
+                            verification_type: '2fa_login'
+                        }
+                    }
+                });
+        
+                if (error) {
+                    throw error;
+                }
+        
+                startResendTimer();
+                showMessage('New verification code sent to your email!', 'info');
+            } catch (error) {
+                console.error('Resend error:', error);
+                showMessage('Failed to resend code. Please try again.', 'error');
+            }
+        });
+        
+        // Load remembered user on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const rememberedUser = JSON.parse(localStorage.getItem('remember_user') || '{}');
+            if (rememberedUser.email && (Date.now() - rememberedUser.timestamp) < (7 * 24 * 60 * 60 * 1000)) {
+                document.getElementById('email').value = rememberedUser.email;
+                document.getElementById('remember').checked = true;
+            }
+            
+            // Focus email input
+            document.getElementById('email').focus();
+        });
+        
+        // Check if user is already logged in with 2FA verified
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                const is2FAVerified = localStorage.getItem('2fa_verified');
+                if (is2FAVerified === 'true') {
+                    // User is fully authenticated with 2FA, redirect to main
+                    window.location.href = 'index.html';
+                }
+            }
+        });
+        
+        // Forgot Password Handler
+        document.getElementById('forgot-password').addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                showMessage('Please enter your email address first', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/reset-password.html`
+                });
+                
+                if (error) throw error;
+                
+                showMessage('Password reset email sent! Check your inbox.', 'success');
+            } catch (error) {
+                showMessage('Failed to send reset email. Please try again.', 'error');
+            }
+        });
+        </script>
+        
+</body>
+</html>
