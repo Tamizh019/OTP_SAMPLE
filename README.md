@@ -974,5 +974,54 @@ The codebase is well-structured, thoroughly documented, and ready for production
 
 **Version**: 1.0  
 **Last Updated**: December 18, 2025  
-**Created by**: Tamizharasan  
-**Status**: Production Ready
+
+```mermaid
+erDiagram
+    users {
+        bigint id PK
+        varchar username UK
+        varchar email UK
+        varchar password
+        enum role
+        boolean is_online
+        boolean is_banned
+        varchar avatar_style
+        timestamp last_seen
+        timestamp banned_at
+        varchar banned_by
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    messages {
+        bigint id PK
+        enum type
+        longtext content
+        varchar sender
+        timestamp timestamp
+        bigint user_id FK
+    }
+
+    shared_files {
+        bigint id PK
+        varchar original_filename
+        varchar content_type
+        bigint file_size
+        longblob file_data
+        varchar uploaded_by
+        timestamp uploaded_at
+        bigint user_id FK
+    }
+
+    profile_images {
+        bigint id PK
+        varchar filename
+        longblob image_data
+        bigint user_id FK
+        timestamp uploaded_at
+    }
+
+    users ||--o{ messages : "sends"
+    users ||--o{ shared_files : "uploads"
+    users ||--o| profile_images : "has"
+
