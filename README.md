@@ -596,8 +596,7 @@ MySQL Server 8.0 running
 Git installed
 
 # Clone repository
-git clone https://github.com/yourusername/chill-space.git
-cd chill-space
+git clone https://github.com/Tamizh019/CHILL_SPACE-SpringBoot.git
 
 # Build project
 mvn clean install
@@ -615,7 +614,7 @@ cp .env.example .env
 # Run application
 mvn spring-boot:run
 
-# Application runs on http://localhost:8080
+# Application runs on http://localhost:9195
 ```
 
 ### 8.4 Database Setup
